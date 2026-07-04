@@ -1,0 +1,43 @@
+name: Surveillance CROUS Île-de-France
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # Toutes les 5 minutes
+  workflow_dispatch:          # Lancement manuel possible
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le repo
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install requests
+
+      - name: Récupérer les IDs déjà vus (cache)
+        uses: actions/cache@v4
+        with:
+          path: seen_ids.json
+          key: seen-ids-${{ github.run_id }}
+          restore-keys: |
+            seen-ids-
+
+      - name: Lancer le script
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python monitor_crous.py
+
+      - name: Sauvegarder les IDs vus
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: seen_ids.json
+          key: seen-ids-${{ github.run_id }}
