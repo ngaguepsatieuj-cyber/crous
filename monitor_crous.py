@@ -29,14 +29,8 @@ def save_seen(seen):
 # ─── RÉCUPÉRER LES ANNONCES ─────────────────────────────────────────────────
 def fetch_listings(crous_name, crous_id):
     url = f"https://trouverunlogement.lescrous.fr/api/fr/search/{crous_id}"
-    params = {
-        "page": 1,
-        "per_page": 50,
-    }
-    headers = {
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0",
-    }
+    params = {"page": 1, "per_page": 50}
+    headers = {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
     try:
         r = requests.get(url, params=params, headers=headers, timeout=15)
         r.raise_for_status()
@@ -59,6 +53,7 @@ def send_telegram(message):
     try:
         r = requests.post(url, json=payload, timeout=10)
         r.raise_for_status()
+        print("Message Telegram envoyé !")
     except Exception as e:
         print(f"Erreur Telegram: {e}")
 
@@ -82,6 +77,9 @@ def format_listing(item, crous_name):
 
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 def main():
+    # Message de confirmation à chaque lancement
+    send_telegram("✅ <b>Bot CROUS actif !</b>\n🔍 Surveillance en cours pour l'Île-de-France...")
+
     seen = load_seen()
     new_count = 0
 
@@ -94,13 +92,12 @@ def main():
             if not item_id or item_id in seen:
                 continue
 
-            # Nouvelle annonce !
             seen.add(item_id)
             new_count += 1
             message = format_listing(item, crous_name)
             send_telegram(message)
             print(f"  → Nouvelle annonce envoyée : {item_id}")
-            time.sleep(0.5)  # éviter le spam
+            time.sleep(0.5)
 
     if new_count == 0:
         print("Aucune nouvelle annonce.")
